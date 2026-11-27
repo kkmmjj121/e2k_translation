@@ -1,3 +1,4 @@
+from utils import paths
 import os
 import torch
 from transformers import TranslationPipeline, AutoModelForSeq2SeqLM, AutoTokenizer
@@ -14,13 +15,13 @@ import evaluate
 
 seed = 55
 
-df = pd.read_csv('en2ko.csv')
+df = pd.read_csv(str(paths.DATA_CSV))
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", os.environ.get("E2K_CUDA", "0"))
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-best_model = AutoModelForSeq2SeqLM.from_pretrained("/NasData/home/kmj/test/term/model/en2ko/checkpoint-64110").to(device)
-best_tokenizer = AutoTokenizer.from_pretrained("/NasData/home/kmj/test/term/model/en2ko/checkpoint-64110")
+best_model = AutoModelForSeq2SeqLM.from_pretrained(str(paths.PRETRAINED_CHECKPOINT)).to(device)
+best_tokenizer = AutoTokenizer.from_pretrained(str(paths.PRETRAINED_CHECKPOINT))
 
 
 translator = TranslationPipeline(model=best_model, tokenizer=best_tokenizer)
@@ -58,19 +59,19 @@ class CustomTranslationPipeline:
         pred_text = self.ko_tokenizer.decode(generated[0].tolist())
         return {"translation_text": pred_text}
 
-state_dict = torch.load("/NasData/home/kmj/test/term/model/self/last_model.pt")
+state_dict = torch.load(str(paths.CUSTOM_CHECKPOINT), map_location=device)
 
-# state_dict2 = torch.load("/NasData/home/kmj/test/term/model/self/final_final_model.pt")
+# state_dict2 = torch.load(str(paths.SELF_MODEL_DIR / "final_final_model.pt"), map_location=device)
 
 en_sp_tokenizer = sp.SentencePieceProcessor()
-en_sp_tokenizer.load("corpus_en.model")
+en_sp_tokenizer.load(str(paths.TOKENIZER_ROOT / "corpus_en.model"))
 ko_sp_tokenizer = sp.SentencePieceProcessor()
-ko_sp_tokenizer.load('corpus_ko.model')
+ko_sp_tokenizer.load(str(paths.TOKENIZER_ROOT / "corpus_ko.model"))
 
 # en_sp_tokenizer2 = sp.SentencePieceProcessor()
-# en_sp_tokenizer2.load("en.model")
+# en_sp_tokenizer2.load(str(paths.TOKENIZER_ROOT / "en.model"))
 # ko_sp_tokenizer2 = sp.SentencePieceProcessor()
-# ko_sp_tokenizer2.load('ko.model')
+# ko_sp_tokenizer2.load(str(paths.TOKENIZER_ROOT / "ko.model"))
 
 
 

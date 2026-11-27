@@ -1,3 +1,4 @@
+from utils import paths
 import os
 import torch
 import torch.nn as nn
@@ -25,7 +26,7 @@ parser.add_argument('--N', type= int, default=6)
 parser.add_argument('--d_model', type = int, default=512)
 parser.add_argument('--dff', type = int, default=2048)
 parser.add_argument('--head', type=int, default=8)
-parser.add_argument('--cuda', type=str, default='1')
+parser.add_argument('--cuda', type=str, default=os.environ.get('E2K_CUDA', '0'))
 parser.add_argument('--batch', type=int, default=128)
 parser.add_argument('--lr', type=float, default=2e-4)
 parser.add_argument('--name', type = str, default='best_model.pt')
@@ -56,9 +57,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 sp_tokenizer_en = sp.SentencePieceProcessor()
-sp_tokenizer_en.load("corpus_en.model")
+sp_tokenizer_en.load(str(paths.TOKENIZER_ROOT / "corpus_en.model"))
 sp_tokenizer_ko = sp.SentencePieceProcessor()
-sp_tokenizer_ko.load('corpus_ko.model')
+sp_tokenizer_ko.load(str(paths.TOKENIZER_ROOT / "corpus_ko.model"))
 
 src_vocab_size = sp_tokenizer_en.get_piece_size()
 tgt_vocab_size = sp_tokenizer_ko.get_piece_size()
@@ -68,7 +69,7 @@ pad_id = sp_tokenizer_en.pad_id()
 
 
 
-df = pd.read_csv("en2ko.csv")
+df = pd.read_csv(str(paths.DATA_CSV))
 # df = df[:100]
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=seed)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
@@ -167,7 +168,8 @@ best_bleu = 0
 patience = args.p
 c = 0
 
-model_save = '/NasData/home/kmj/test/term/model/self'
+model_save = str(paths.SELF_MODEL_DIR)
+os.makedirs(model_save, exist_ok=True)
 model_name = args.name
 for epoch in range(num_epochs):
 
@@ -231,7 +233,7 @@ for epoch in range(num_epochs):
 model.eval()
 all_pred_tokens = []
 all_tgt_tokens = []
-model.load_state_dict('/NasData/home/kmj/test/term/model/self/best_model.pt')
+model.load_state_dict(torch.load(os.path.join(model_save, model_name), map_location=device))
 with torch.no_grad():
     for src, tgt in test_loader:
         generated = greedy_decode(model, src, max_len=128, bos_id=sp_tokenizer_ko.bos_id(), eos_id=sp_tokenizer_ko.eos_id(), device=device)

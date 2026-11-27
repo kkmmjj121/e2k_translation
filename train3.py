@@ -1,3 +1,4 @@
+from utils import paths
 import os
 import torch
 import torch.nn as nn
@@ -25,7 +26,7 @@ parser.add_argument('--N', type= int, default=6)
 parser.add_argument('--d_model', type = int, default=512)
 parser.add_argument('--dff', type = int, default=2048)
 parser.add_argument('--head', type=int, default=8)
-parser.add_argument('--cuda', type=str, default='1')
+parser.add_argument('--cuda', type=str, default=os.environ.get('E2K_CUDA', '0'))
 parser.add_argument('--batch', type=int, default=128)
 parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--name', type = str, default='final_final_model.pt')
@@ -43,9 +44,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 sp_tokenizer_en = sp.SentencePieceProcessor()
-sp_tokenizer_en.load("en.model")
+sp_tokenizer_en.load(str(paths.TOKENIZER_ROOT / "en.model"))
 sp_tokenizer_ko = sp.SentencePieceProcessor()
-sp_tokenizer_ko.load('ko.model')
+sp_tokenizer_ko.load(str(paths.TOKENIZER_ROOT / "ko.model"))
 
 src_vocab_size = sp_tokenizer_en.get_piece_size()
 tgt_vocab_size = sp_tokenizer_ko.get_piece_size()
@@ -55,7 +56,7 @@ pad_id = sp_tokenizer_en.pad_id()
 
 
 
-df = pd.read_csv("en2ko.csv")
+df = pd.read_csv(str(paths.DATA_CSV))
 # df = df[:100]
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=seed)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
@@ -82,7 +83,7 @@ model = CustomTransformer(src_vocab_size=src_vocab_size, tgt_vocab_size=tgt_voca
                  dim_feedforward=args.dff, dropout=args.drop).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01, betas=(0.9, 0.98), eps=1e-9,)   
 criterion = nn.CrossEntropyLoss(ignore_index=0, label_smoothing=0.1)
-state_dict = torch.load("/NasData/home/kmj/test/term/model/self/final_model.pt")
+state_dict = torch.load(str(paths.resume_checkpoint("final_model.pt")), map_location=device)
 model.load_state_dict(state_dict)
 def train_one_epoch(model, dataloader, optimizer, criterion, scheduler, device, log_interval=100):
     model.train()
@@ -154,7 +155,8 @@ best_bleu = 0
 patience = args.p
 c = 0
 
-model_save = '/NasData/home/kmj/test/term/model/self'
+model_save = str(paths.SELF_MODEL_DIR)
+os.makedirs(model_save, exist_ok=True)
 model_name = args.name
 for epoch in range(num_epochs):
 

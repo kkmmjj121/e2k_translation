@@ -1,3 +1,4 @@
+from utils import paths
 import os
 import pandas as pd
 import torch
@@ -15,7 +16,7 @@ import wandb
 
 # 환경 설정
 warnings.filterwarnings('ignore')
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", os.environ.get("E2K_CUDA", "0"))
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 파라미터 설정
@@ -29,7 +30,7 @@ seed_everything(seed)
 
 
 # 데이터 불러오기 & 데이터 분할
-data = pd.read_csv('/NasData/home/kmj/test/term/en2ko.csv')
+data = pd.read_csv(str(paths.DATA_CSV))
 
 train_data, temp = train_test_split(data, test_size=0.2, random_state=seed)
 val_data, test_data = train_test_split(temp, test_size=0.5, random_state=seed)
@@ -102,7 +103,7 @@ wandb.init(
 
 
 training_args = Seq2SeqTrainingArguments(
-    output_dir="model/en2ko",
+    output_dir=str(paths.MODEL_ROOT / "en2ko"),
     eval_strategy="epoch",                   
     save_strategy="epoch",
     load_best_model_at_end=True,

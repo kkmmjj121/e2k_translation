@@ -1,10 +1,12 @@
+from utils import paths
+paths.TOKENIZER_ROOT.mkdir(parents=True, exist_ok=True)
 import pandas as pd
 import os
 import sentencepiece as spm
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", os.environ.get("E2K_CUDA", "0"))
 
 
-df = pd.read_csv('en2ko.csv')
+df = pd.read_csv(str(paths.DATA_CSV))
 
 
 # en = df['ko'].tolist()
@@ -21,7 +23,7 @@ df = pd.read_csv('en2ko.csv')
 
 
 
-# with open('ko.txt', 'w') as f:
+# with open(str(paths.TOKENIZER_ROOT / "ko.txt"), 'w') as f:
 #     for i in en2:
 #         f.write(i)
 # f.close()
@@ -32,7 +34,7 @@ df = pd.read_csv('en2ko.csv')
 
 
 
-# sp = spm.SentencePieceProcessor(model_file='ko.model')
+# sp = spm.SentencePieceProcessor(model_file=str(paths.TOKENIZER_ROOT / "ko.model"))
 # print(sp.get_piece_size())
 # print(sp.pad_id(), sp.unk_id(), sp.bos_id(), sp.eos_id())
 
@@ -40,8 +42,8 @@ df = pd.read_csv('en2ko.csv')
 # # print(sp.encode('.'))
 
 spm.SentencePieceTrainer.Train(
-    input='ko.txt',   
-    model_prefix='ko',        
+    input=str(paths.TOKENIZER_ROOT / "ko.txt"),
+    model_prefix=str(paths.TOKENIZER_ROOT / "ko"),
     vocab_size=48000,            
     model_type='bpe',            
     pad_id=0,

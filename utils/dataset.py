@@ -1,3 +1,4 @@
+from . import paths
 import torch
 from torch.utils.data import Dataset
 import warnings
@@ -23,7 +24,7 @@ class CustomDataset(Dataset):
 # </s>
 
 
-sp = spm.SentencePieceProcessor(model_file='en2ko.model')
+sp = spm.SentencePieceProcessor(model_file=str(paths.TOKENIZER_ROOT / "en2ko.model"))
 bos_id = sp.bos_id()
 eos_id = sp.eos_id()
 def tensor_transform(token_ids):
@@ -43,9 +44,9 @@ class TranslationDataset(Dataset):
         return len(self.src)
 
     def __getitem__(self, idx):
-        
+
         src_tokens = self.tokenizer_en.encode(self.src[idx], out_type=int)[:self.max_len]
         tgt_tokens = self.tokenizer_ko.encode(self.tgt[idx], out_type=int)[:self.max_len]
-        
+
         tgt = tensor_transform(tgt_tokens)
         return torch.tensor(src_tokens, dtype=torch.long), torch.tensor(tgt, dtype=torch.long)
